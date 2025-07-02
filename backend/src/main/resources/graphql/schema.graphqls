@@ -1,0 +1,36 @@
+type User {
+    id: ID!
+    username: String!
+    email: String!
+    role: String!
+    createdAt: String
+}
+
+type Dataset {
+    id: ID!
+    name: String!
+    description: String
+    schemaJson: String
+    version: Int
+    createdAt: String
+    owner: User
+}
+
+type DatasetRow {
+    id: ID!
+    data: String
+    createdAt: String
+    dataset: Dataset
+}
+
+type Query {
+    allUsers: [User]
+    datasetsByUser(userId: ID!): [Dataset]
+    datasetRows(datasetId: ID!): [DatasetRow]
+}
+
+type Mutation {
+    createUser(username: String!, email: String!, role: String!): User
+    createDataset(userId: ID!, name: String!, description: String, schemaJson: String): Dataset
+    addDatasetRow(datasetId: ID!, data: String!): DatasetRow
+}
