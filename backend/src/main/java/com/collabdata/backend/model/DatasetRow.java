@@ -3,6 +3,9 @@ package com.collabdata.backend.model;
 import java.time.Instant;
 import java.util.UUID;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -17,6 +20,7 @@ public class DatasetRow {
     @JoinColumn(name = "dataset_id")
     private Dataset dataset;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private String data;
 
