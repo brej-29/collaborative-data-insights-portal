@@ -17,7 +17,7 @@ public class DatasetUploadService {
         Set<String> headers = new LinkedHashSet<>();
 
         try (CSVReaderHeaderAware reader = new CSVReaderHeaderAware(new InputStreamReader(file.getInputStream()))) {
-            for (int i = 0; i < 5; i++) {
+            for (int i = 0; i < 50; i++) {
                 Map<String, String> row = reader.readMap();
                 if (row == null) break;
                 headers.addAll(row.keySet());
