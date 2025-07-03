@@ -1,7 +1,6 @@
 package com.collabdata.backend.model;
 import java.time.Instant;
 import java.util.UUID;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
