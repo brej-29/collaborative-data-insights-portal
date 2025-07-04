@@ -9,11 +9,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+
 @RestController
 @RequestMapping("/api/upload")
-@CrossOrigin(origins = "http://localhost:3000")
 public class DatasetUploadController {
-
+//@CrossOrigin(origins = "*", allowCredentials = "true")
     private final DatasetUploadService uploadService;
 
     public DatasetUploadController(DatasetUploadService uploadService) {
