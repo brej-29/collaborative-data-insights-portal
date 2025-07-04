@@ -11,6 +11,7 @@ public class WebConfig implements WebMvcConfigurer {
             .allowedOrigins("http://localhost:3000")
             .allowedMethods("*")
             .allowedHeaders("*")
-            .allowCredentials(true);  // ✅ Now safe since origin is exact
+            .allowCredentials(true);  // ✅ Now safe since origin is exact            .allowedOrigins("*")
+
     }
 }
