@@ -10,6 +10,7 @@ import com.collabdata.backend.model.User;
 import com.collabdata.backend.repository.DatasetRepository;
 import com.collabdata.backend.repository.DatasetRowRepository;
 import com.collabdata.backend.repository.UserRepository;
+import com.collabdata.backend.security.LoggedInUserProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opencsv.CSVReaderHeaderAware;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,7 @@ import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("unused")
 @Service
 public class DatasetUploadService {
 
@@ -29,12 +31,16 @@ public class DatasetUploadService {
 
     private final DatasetRepository datasetRepo;
     private final DatasetRowRepository rowRepo;
+    @SuppressWarnings("unused")
     private final UserRepository userRepo;
+    private final LoggedInUserProvider loggedInUserProvider;
 
-    public DatasetUploadService(DatasetRepository datasetRepo, DatasetRowRepository rowRepo, UserRepository userRepo) {
+    public DatasetUploadService(DatasetRepository datasetRepo, DatasetRowRepository rowRepo, UserRepository userRepo,
+            LoggedInUserProvider loggedInUserProvider) {
         this.datasetRepo = datasetRepo;
         this.rowRepo = rowRepo;
         this.userRepo = userRepo;
+        this.loggedInUserProvider = loggedInUserProvider;
     }
 
     public CsvUploadResponse handleCsvUpload(MultipartFile file) {
@@ -58,13 +64,9 @@ public class DatasetUploadService {
     }
 
     @Transactional
-    public void saveFullDataset(MultipartFile file, String name, String description, String schemaJson, UUID userId) {
-        logger.info("⏳ Starting full dataset save: userId={}, name={}", userId, name);
-        User user = userRepo.findById(userId)
-                .orElseThrow(() -> {
-                    logger.error("❌ User not found: {}", userId);
-                    return new UserNotFoundException(userId.toString());
-                });
+    public void saveFullDataset(MultipartFile file, String name, String description, String schemaJson) {
+        logger.info("⏳ Starting full dataset save: name={}", name);
+        User user = loggedInUserProvider.getCurrentUser();
 
         // Versioning: check existing datasets with same name
         List<Dataset> existing = datasetRepo.findByOwner(user);

@@ -3,8 +3,6 @@ package com.collabdata.backend.controller;
 import com.collabdata.backend.dto.CsvUploadResponse;
 import com.collabdata.backend.service.DatasetUploadService;
 
-import java.util.UUID;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -35,10 +33,9 @@ public class DatasetUploadController {
             @RequestParam("file") MultipartFile file,
             @RequestParam("name") String name,
             @RequestParam("description") String description,
-            @RequestParam("schemaJson") String schemaJson,
-            @RequestParam("userId") UUID userId) {
-        logger.info("📥 Received request to save dataset for user {}", userId);
-        uploadService.saveFullDataset(file, name, description, schemaJson, userId);
+            @RequestParam("schemaJson") String schemaJson) {
+        logger.info("📥 Received request to save dataset for  name={}", name);
+        uploadService.saveFullDataset(file, name, description, schemaJson);
         return ResponseEntity.ok("Dataset uploaded and saved successfully");
     }
 }
