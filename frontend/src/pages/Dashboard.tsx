@@ -1,84 +1,111 @@
-import React, { useState } from "react";
-import {
-  Bar, Line, Pie
-} from "react-chartjs-2";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  LineElement,
-  PointElement,
-  ArcElement,
-  Tooltip,
-  Legend,
-  Title,
-} from "chart.js";
+import React, { useEffect, useState } from "react";
+import api from "../api/axios";
+import ChartBlock from "../components/ChartBlock";
+import { getChartSuggestions } from "../ai/openRouter";
+import { buildPrompt } from "../ai/promptBuilder";
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  LineElement,
-  PointElement,
-  ArcElement,
-  Tooltip,
-  Legend,
-  Title
-);
+interface ChartConfig {
+  chartType: string;
+  xField: string;
+  yField: string;
+  title: string;
+  data: Record<string, any>[];
+}
+
+interface Dataset {
+  id: string;
+  name: string;
+  description: string;
+}
 
 export default function Dashboard() {
-  const [chartType, setChartType] = useState("bar");
+  const [datasets, setDatasets] = useState<Dataset[]>([]);
+  const [selectedDatasetId, setSelectedDatasetId] = useState<string | null>(null);
+  const [selectedDatasetData, setSelectedDatasetData] = useState<Record<string, any>[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [charts, setCharts] = useState<ChartConfig[]>([]);
 
-  const chartData = {
-    labels: ["Jan", "Feb", "Mar", "Apr"],
-    datasets: [
-      {
-        label: "Revenue",
-        data: [1200, 2100, 1800, 2300],
-        backgroundColor: ["#2563EB"],
-        borderColor: "#1E40AF",
-        borderWidth: 1,
-      },
-    ],
-  };
+  useEffect(() => {
+    const fetchDatasets = async () => {
+      try {
+        const res = await api.get("/datasets");
+        setDatasets(res.data);
+      } catch (err) {
+        console.error("Failed to fetch datasets", err);
+      }
+    };
 
-  const chartOptions = {
-    responsive: true,
-    plugins: {
-      legend: { position: "top" as const },
-      title: {
-        display: true,
-        text: "Revenue Trend",
-      },
-    },
-  };
+    fetchDatasets();
+  }, []);
 
-  const chartComponents: Record<string, React.ReactElement> = {
-    bar: <Bar data={chartData} options={chartOptions} />,
-    line: <Line data={chartData} options={chartOptions} />,
-    pie: <Pie data={chartData} options={chartOptions} />,
+  const handleDatasetSelect = async (id: string) => {
+    setSelectedDatasetId(id);
+    try {
+      const res = await api.get(`/datasets/${id}/rows`);
+      setSelectedDatasetData(res.data.slice(0, 100));
+    } catch (err) {
+      console.error("Failed to fetch dataset rows", err);
+    }
   };
 
   return (
     <div className="p-4">
-      <h2 className="text-2xl font-bold mb-4">Interactive Dashboard</h2>
+      <h2 className="text-2xl font-bold mb-4">Dashboard</h2>
 
-      <div className="mb-4">
-        <label className="mr-2 font-medium">Chart Type:</label>
+      <div className="mb-6 space-y-2">
+        <label className="block font-semibold">Select a dataset</label>
         <select
-          className="border px-2 py-1 rounded"
-          value={chartType}
-          onChange={(e) => setChartType(e.target.value)}
+          className="border p-2 rounded w-full"
+          value={selectedDatasetId || ""}
+          onChange={(e) => handleDatasetSelect(e.target.value)}
         >
-          <option value="bar">Bar</option>
-          <option value="line">Line</option>
-          <option value="pie">Pie</option>
+          <option value="">-- Choose Dataset --</option>
+          {datasets.map((ds) => (
+            <option key={ds.id} value={ds.id}>
+              {ds.name}
+            </option>
+          ))}
         </select>
       </div>
 
-      <div className="bg-white p-4 border rounded shadow">
-        {chartComponents[chartType]}
+      {selectedDatasetId && (
+        <div className="mb-6 space-x-4">
+          <button
+            onClick={async () => {
+  if (!selectedDatasetData.length) return;
+  const prompt = buildPrompt(Object.keys(selectedDatasetData[0]), selectedDatasetData);
+  try {
+    const aiCharts = await getChartSuggestions(prompt);
+    setCharts(aiCharts); // Add to dashboard
+  } catch (err) {
+    alert("AI failed to generate charts.");
+  }
+}}
+            className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+          >
+            🧠 Auto-Generate Dashboard (AI)
+          </button>
+          <button
+            onClick={() => console.log("TODO: Enter manual builder mode")}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            ✍️ Build Dashboard Manually
+          </button>
+        </div>
+      )}
+
+      {/* Preview Sample Data */}
+      {selectedDatasetData.length > 0 && (
+        <pre className="text-xs bg-gray-100 p-2 rounded max-h-64 overflow-y-auto">
+          {JSON.stringify(selectedDatasetData.slice(0, 5), null, 2)}
+        </pre>
+      )}
+
+      {/* Placeholder for future chart rendering */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+        {charts.map((config, index) => (
+          <ChartBlock key={index} config={config} />
+        ))}
       </div>
     </div>
   );

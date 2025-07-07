@@ -11,4 +11,5 @@ import com.collabdata.backend.model.User;
 @Repository
 public interface DatasetRepository extends JpaRepository<Dataset, UUID> {
     List<Dataset> findByOwner(User owner);
+    List<Dataset> findByOwnerId(UUID ownerId);
 }
