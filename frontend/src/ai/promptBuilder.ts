@@ -7,17 +7,25 @@ Given:
 - Here are a few sample rows:
 ${JSON.stringify(sampleRows.slice(0, 5), null, 2)}
 
-Suggest 5 useful charts in this format:
+Suggest 5 useful and accurate chart configurations based on the following dataset.
+
+Only return a **pure JSON array**, and ensure:
+- Each object must include a valid "title", "chartType", "xField"
+- "yField" must be present **only if the chart type requires it**
+- If not needed (e.g. pie chart), omit "yField" or set to null
+- Do **not** leave any field empty, undefined, or as a space
+
+Format:
 [
   {
-    "title": "Chart Title",
-    "chartType": "bar" | "line" | "pie" | "scatter" | "area" | "doughnut" | "radar" | "bubble",
+    "title": "Chart title",
+    "chartType": "bar" | "line" | "pie" | "scatter" | "histogram" | "doughnut" | "area" | "bubble",
     "xField": "column_name",
-    "yField": "column_name"
+    "yField": "column_name or null"
   },
   ...
 ]
 
-Only return pure JSON — do not explain anything.
+No markdown. No explanation. Just valid JSON.
   `.trim();
 }

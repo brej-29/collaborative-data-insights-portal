@@ -11,4 +11,5 @@ import com.collabdata.backend.model.DatasetRow;
 @Repository
 public interface DatasetRowRepository extends JpaRepository<DatasetRow, UUID> {
     List<DatasetRow> findByDataset(Dataset dataset);
+    List<DatasetRow> findByDatasetId(UUID datasetId);
 }

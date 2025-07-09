@@ -39,14 +39,18 @@ export default function Dashboard() {
   }, []);
 
   const handleDatasetSelect = async (id: string) => {
-    setSelectedDatasetId(id);
-    try {
-      const res = await api.get(`/datasets/${id}/rows`);
-      setSelectedDatasetData(res.data.slice(0, 100));
-    } catch (err) {
-      console.error("Failed to fetch dataset rows", err);
-    }
-  };
+  setSelectedDatasetId(id);
+  try {
+    const res = await api.get(`/datasets/${id}/rows`);
+    const parsedRows = res.data
+      .slice(0, 100)
+      .map((r: any) => JSON.parse(r.data));
+    setSelectedDatasetData(parsedRows);
+  } catch (err) {
+    console.error("Failed to fetch dataset rows", err);
+  }
+};
+
 
   return (
     <div className="p-4">
@@ -76,9 +80,17 @@ export default function Dashboard() {
   const prompt = buildPrompt(Object.keys(selectedDatasetData[0]), selectedDatasetData);
   try {
     const aiCharts = await getChartSuggestions(prompt);
-    setCharts(aiCharts); // Add to dashboard
+
+    // ENRICH AI suggestions with dataset row data
+    const enrichedCharts = aiCharts.map((chart: any) => ({
+      ...chart,
+      data: selectedDatasetData,
+    }));
+
+    setCharts(enrichedCharts);
   } catch (err) {
-    alert("AI failed to generate charts.");
+    console.error("AI generation error:", err);
+    alert("⚠️ AI failed. Try again or check logs.");
   }
 }}
             className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
