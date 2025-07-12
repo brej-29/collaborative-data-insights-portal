@@ -19,7 +19,7 @@ Format:
 [
   {
     "title": "Chart title",
-    "chartType": "bar" | "line" | "pie" | "scatter" | "histogram" | "doughnut" | "area" | "bubble",
+    "chartType": "bar", "line", "pie", "doughnut", "scatter", "area", "radar", "histogram",
     "xField": "column_name",
     "yField": "column_name or null"
   },
