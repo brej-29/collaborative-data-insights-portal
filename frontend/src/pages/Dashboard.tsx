@@ -3,6 +3,7 @@ import api from "../api/axios";
 import { getChartSuggestions } from "../ai/openRouter";
 import { buildPrompt } from "../ai/promptBuilder";
 import EditableChartBlock from "../components/EditableChartBlock";
+import DataSummary from "../components/DataSummary";
 
 interface ChartConfig {
   chartType:
@@ -38,10 +39,13 @@ export default function Dashboard() {
   const [selectedDatasetData, setSelectedDatasetData] = useState<Record<string, any>[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [charts, setCharts] = useState<ChartConfig[]>([]);
-const [manualChartType, setManualChartType] = useState<ChartConfig["chartType"]>("bar");
-const [manualXField, setManualXField] = useState<string>("");
-const [manualYField, setManualYField] = useState<string>("");
-const [manualTitle, setManualTitle] = useState<string>("");
+  const [manualChartType, setManualChartType] = useState<ChartConfig["chartType"]>("bar");
+  const [manualXField, setManualXField] = useState<string>("");
+  const [manualYField, setManualYField] = useState<string>("");
+  const [manualTitle, setManualTitle] = useState<string>("");
+  const [dataSummary, setDataSummary] = useState<Record<string, any> | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+
 
 
   useEffect(() => {
@@ -57,7 +61,7 @@ const [manualTitle, setManualTitle] = useState<string>("");
     fetchDatasets();
   }, []);
 
-  const handleDatasetSelect = async (id: string) => {
+const handleDatasetSelect = async (id: string) => {
   setSelectedDatasetId(id);
   try {
     const res = await api.get(`/datasets/${id}/rows`);
@@ -65,8 +69,14 @@ const [manualTitle, setManualTitle] = useState<string>("");
       .slice(0, 100)
       .map((r: any) => JSON.parse(r.data));
     setSelectedDatasetData(parsedRows);
+
+    // 🔍 ADD THIS to fetch data summary
+    const summaryRes = await api.get(`/analysis/${id}/summary`);
+    setDataSummary(summaryRes.data);
+
   } catch (err) {
-    console.error("Failed to fetch dataset rows", err);
+    console.error("⚠️ Failed to load dataset or summary", err);
+  alert("Failed to load dataset or summary. Please try again later.");
   }
 };
 
@@ -95,19 +105,26 @@ const [manualTitle, setManualTitle] = useState<string>("");
         <div className="mb-6 space-x-4">
           <button
             onClick={async () => {
-  if (!selectedDatasetData.length) return;
-  const prompt = buildPrompt(Object.keys(selectedDatasetData[0]), selectedDatasetData);
+  if (!selectedDatasetData.length || !selectedDatasetId) return;
+
   try {
+    const summaryRes = await api.get(`/analysis/${selectedDatasetId}/summary`);
+    const prompt = buildPrompt(
+      Object.keys(selectedDatasetData[0]),
+      selectedDatasetData.slice(0, 3),
+      summaryRes.data
+    );
+
+
     const aiCharts = await getChartSuggestions(prompt);
 
-    // ENRICH AI suggestions with dataset row data
     const enrichedCharts = aiCharts.map((chart: any) => ({
       ...chart,
       data: selectedDatasetData,
-dataInfo: {
-  used: selectedDatasetData.length,
-  total: selectedDatasetData.length, // You can update later when limiting
-},
+      dataInfo: {
+        used: selectedDatasetData.length,
+        total: selectedDatasetData.length,
+      },
     }));
 
     setCharts(enrichedCharts);
@@ -116,6 +133,7 @@ dataInfo: {
     alert("⚠️ AI failed. Try again or check logs.");
   }
 }}
+
             className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
           >
             🧠 Auto-Generate Dashboard (AI)
@@ -224,13 +242,26 @@ dataInfo: {
   </div>
 )}
 
+      {dataSummary && <DataSummary summary={dataSummary} />}
 
       {/* Preview Sample Data */}
       {selectedDatasetData.length > 0 && (
-        <pre className="text-xs bg-gray-100 p-2 rounded max-h-64 overflow-y-auto">
-          {JSON.stringify(selectedDatasetData.slice(0, 5), null, 2)}
-        </pre>
-      )}
+  <div className="bg-white p-4 rounded shadow mt-6">
+    <button
+      onClick={() => setShowPreview((prev) => !prev)}
+      className="text-sm font-semibold bg-gray-200 px-3 py-1 rounded hover:bg-gray-300"
+    >
+      {showPreview ? "🔽 Hide" : "▶️ Show"} Preview Sample Data
+    </button>
+
+    {showPreview && (
+      <pre className="text-xs bg-gray-100 p-3 rounded mt-4 max-h-64 overflow-y-auto">
+        {JSON.stringify(selectedDatasetData.slice(0, 5), null, 2)}
+      </pre>
+    )}
+  </div>
+)}
+
 
       {/* Placeholder for future chart rendering */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">

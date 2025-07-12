@@ -1,32 +1,46 @@
-export function buildPrompt(headers: string[], sampleRows: Record<string, any>[]): string {
+export function buildPrompt(
+  headers: string[],
+  sampleRows: Record<string, any>[],
+  summary?: Record<string, any>
+): string {
+  const fieldsList = headers.join(", ");
+  const summaryBlock = summary
+    ? `Column Summary:\n${JSON.stringify(summary, null, 2)}\n`
+    : "";
+
   return `
 You are a data visualization assistant. 
 
 Given:
-- A dataset with the following columns: ${headers.join(", ")}
-- Here are a few sample rows:
+- Columns: ${fieldsList}
+${summaryBlock}
+- Sample Data (first 5 rows):
 ${JSON.stringify(sampleRows.slice(0, 5), null, 2)}
 
-Suggest 5 useful and accurate chart configurations based on the following dataset.
+Your task:
+Return exactly 5 useful chart configurations as a pure JSON array.
 
-Only return a **pure JSON array**, and ensure:
-- Each object must include a valid "title", "chartType", "xField"
-- "xField" and "yField" must only return one column name each
-- "yField" must be present **only if the chart type requires it**
-- If not needed (e.g. pie chart), omit "yField" or set to null
-- Do **not** leave any field empty, undefined, or as a space
+Each object must include:
+- "title" (descriptive string)
+- "chartType" (one of: bar, line, pie, doughnut, scatter, area, radar, histogram)
+- "xField" (must be a valid column name)
+- "yField" (only include if the chart type needs it; use null or omit if not needed)
 
-Format:
+Output format:
 [
   {
-    "title": "Chart title",
-    "chartType": "bar", "line", "pie", "doughnut", "scatter", "area", "radar", "histogram",
+    "title": "Title of the chart",
+    "chartType": "bar",
     "xField": "column_name",
     "yField": "column_name or null"
   },
   ...
 ]
 
-No markdown. No explanation. Just valid JSON.
+Rules:
+- Respond with a valid JSON array ONLY. No text, comments, or code blocks.
+- Do not use markdown, triple backticks, or explanation.
+- Avoid fields like "undefined", "empty", or "".
+- All field values must be non-empty valid strings or null.
   `.trim();
 }
