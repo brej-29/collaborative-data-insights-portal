@@ -11,6 +11,7 @@ Suggest 5 useful and accurate chart configurations based on the following datase
 
 Only return a **pure JSON array**, and ensure:
 - Each object must include a valid "title", "chartType", "xField"
+- "xField" and "yField" must only return one column name each
 - "yField" must be present **only if the chart type requires it**
 - If not needed (e.g. pie chart), omit "yField" or set to null
 - Do **not** leave any field empty, undefined, or as a space

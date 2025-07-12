@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import api from "../api/axios";
-import ChartBlock from "../components/ChartBlock";
 import { getChartSuggestions } from "../ai/openRouter";
 import { buildPrompt } from "../ai/promptBuilder";
+import EditableChartBlock from "../components/EditableChartBlock";
 
 interface ChartConfig {
   chartType:
@@ -234,10 +234,24 @@ dataInfo: {
 
       {/* Placeholder for future chart rendering */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
-        {charts.map((config, index) => (
-          <ChartBlock key={index} config={config} />
-        ))}
-      </div>
+  {charts.map((config, index) => (
+  <EditableChartBlock
+    key={index}
+    config={config}
+    onUpdate={(newConfig) => {
+      const updated = [...charts];
+      updated[index] = newConfig;
+      setCharts(updated);
+    }}
+    onDelete={() => {
+      const updated = [...charts];
+      updated.splice(index, 1);
+      setCharts(updated);
+    }}
+  />
+))}
+</div>
+
     </div>
   );
 }
