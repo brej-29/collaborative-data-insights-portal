@@ -11,7 +11,9 @@ import com.collabdata.backend.exception.DatasetException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.UUID;
@@ -64,4 +66,11 @@ public class DashboardController {
                 .orElseThrow(() -> new DatasetException("Dataset not found: " + datasetId));
         return dashboardRepo.findByDataset(dataset);
     }
+
+    @GetMapping("/{id}")
+public Dashboard getDashboardById(@PathVariable UUID id) {
+    return dashboardRepo.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Dashboard not found"));
+}
+
 }

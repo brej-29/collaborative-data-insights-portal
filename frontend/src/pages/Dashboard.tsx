@@ -4,8 +4,10 @@ import { getChartSuggestions } from "../ai/openRouter";
 import { buildPrompt } from "../ai/promptBuilder";
 import EditableChartBlock from "../components/EditableChartBlock";
 import DataSummary from "../components/DataSummary";
+import { v4 as uuidv4 } from "uuid";
 
 interface ChartConfig {
+  id: string,
   chartType:
     | "bar"
     | "line"
@@ -45,6 +47,27 @@ export default function Dashboard() {
   const [manualTitle, setManualTitle] = useState<string>("");
   const [dataSummary, setDataSummary] = useState<Record<string, any> | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [selectedDashboardId, setSelectedDashboardId] = useState<string | null>(null);
+  const createOrFetchDashboard = async (datasetId: string) => {
+  try {
+    const existingDashboards = await api.get(`/dashboards/dataset/${datasetId}`);
+    if (existingDashboards.data.length > 0) {
+      // ✅ Reuse existing one
+      setSelectedDashboardId(existingDashboards.data[0].id);
+    } else {
+      // ✅ Create new one
+      const created = await api.post(`/dashboards`, {
+        name: `Auto Dashboard for ${datasetId}`,
+        datasetId: datasetId,
+        config: "{}",
+      });
+      setSelectedDashboardId(created.data.id);
+    }
+  } catch (err) {
+    console.error("❌ Failed to create/fetch dashboard", err);
+    alert("Failed to prepare dashboard. Please retry.");
+  }
+};
 
 
 
@@ -61,8 +84,26 @@ export default function Dashboard() {
     fetchDatasets();
   }, []);
 
+useEffect(() => {
+  if (!selectedDashboardId) return;
+
+  const intervalId = setInterval(async () => {
+    if (!selectedDashboardId) return;
+    try {
+      const res = await api.get(`/dashboards/${selectedDashboardId}/charts`);
+      setCharts(res.data);
+    } catch (err) {
+      console.error("Polling failed", err);
+    }
+  }, 5000); // poll every 5 sec
+
+  return () => clearInterval(intervalId); // clean up
+}, [selectedDashboardId]);
+
 const handleDatasetSelect = async (id: string) => {
   setSelectedDatasetId(id);
+  await createOrFetchDashboard(id);
+  console.log("✅ Dashboard ID set:", selectedDashboardId);
   try {
     const res = await api.get(`/datasets/${id}/rows`);
     const parsedRows = res.data
@@ -128,6 +169,13 @@ const handleDatasetSelect = async (id: string) => {
     }));
 
     setCharts(enrichedCharts);
+    if (selectedDatasetId) {
+  for (const chart of enrichedCharts) {
+    await api.post(`/dashboards/${selectedDashboardId}/charts`, chart).catch((err) =>
+      console.error("Failed to save chart", err)
+    );
+  }
+}
   } catch (err) {
     console.error("AI generation error:", err);
     alert("⚠️ AI failed. Try again or check logs.");
@@ -222,6 +270,7 @@ const handleDatasetSelect = async (id: string) => {
         className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
         onClick={() => {
           const newChart = {
+            id: uuidv4(),
             chartType: manualChartType,
             xField: manualXField,
             yField: manualChartType === "pie" ? null : manualYField,
@@ -233,6 +282,11 @@ const handleDatasetSelect = async (id: string) => {
             },
           };
           setCharts((prev) => [...prev, newChart]);
+          if (selectedDatasetId) {
+    api.post(`/dashboards/${selectedDashboardId}/charts`, newChart).catch((err) =>
+      console.error("Failed to save chart", err)
+    );
+  }
         }}
         disabled={!manualXField || (manualChartType !== "pie" && !manualYField)}
       >
@@ -274,12 +328,21 @@ const handleDatasetSelect = async (id: string) => {
       updated[index] = newConfig;
       setCharts(updated);
     }}
-    onDelete={() => {
-      const updated = [...charts];
-      updated.splice(index, 1);
-      setCharts(updated);
-    }}
-  />
+    onDelete={async () => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this chart?");
+    if (!confirmDelete) return;
+
+    try {
+      await api.delete(`/dashboards/${selectedDatasetId}/charts/${config.id}`);
+    } catch (err) {
+      console.error("Failed to delete chart", err);
+    }
+
+    const updated = [...charts];
+    updated.splice(index, 1);
+    setCharts(updated);
+  }}
+/>
 ))}
 </div>
 
