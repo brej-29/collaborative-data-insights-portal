@@ -6,24 +6,35 @@ import java.util.UUID;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name="users")
+@Table(name = "users")
 public class User {
 
     @Id
     @GeneratedValue
     private UUID id;
-    
-    @Column(nullable=false, unique=true)
+
+    @Column(nullable = false, unique = true)
     private String username;
 
-    @Column(nullable=false, unique=true)
+    @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable=false)
+    @Column(nullable = false)
     private String role;
 
     private Instant createdAt = Instant.now();
-    
+
+    @Column(nullable = false)
+    private String password;
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
     public UUID getId() {
         return id;
     }
