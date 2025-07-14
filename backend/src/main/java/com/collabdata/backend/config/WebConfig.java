@@ -1,32 +1,24 @@
 package com.collabdata.backend.config;
 
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.*;
-
-import com.collabdata.backend.security.LoggedInUserProvider;
-import com.collabdata.backend.security.MockLoginFilter;
+import org.springframework.web.cors.*;
+import org.springframework.web.filter.CorsFilter;
 
 @Configuration
-public class WebConfig implements WebMvcConfigurer {
+public class WebConfig {
 
     @Bean
-    public FilterRegistrationBean<MockLoginFilter> mockLoginFilter(LoggedInUserProvider provider) {
-        FilterRegistrationBean<MockLoginFilter> registration = new FilterRegistrationBean<>();
-        registration.setFilter(new MockLoginFilter(provider));
-        registration.addUrlPatterns("/api/*");
-        registration.setOrder(1);
-        return registration;
-    }
+    public CorsFilter corsFilter() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowCredentials(true); // allow cookies/auth
+        config.addAllowedOrigin("http://localhost:3000"); // frontend
+        config.addAllowedHeader("*");
+        config.addAllowedMethod("*");
 
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**")
-                .allowedOrigins("http://localhost:3000")
-                .allowedMethods("*")
-                .allowedHeaders("*")
-                .allowCredentials(true); // ✅ Now safe since origin is exact .allowedOrigins("*")
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config); // apply to all paths
 
+        return new CorsFilter(source);
     }
 }

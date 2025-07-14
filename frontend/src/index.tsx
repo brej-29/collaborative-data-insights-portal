@@ -5,6 +5,7 @@ import App from './App';
 import { ApolloProvider } from "@apollo/client";
 import client from "./apollo/client";
 import reportWebVitals from './reportWebVitals';
+import { AuthProvider } from "./context/AuthContext";
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -12,7 +13,9 @@ const root = ReactDOM.createRoot(
 root.render(
   <React.StrictMode>
     <ApolloProvider client={client}>
-      <App />
+      <AuthProvider> {/* ✅ WRAP INSIDE ApolloProvider */}
+        <App />
+      </AuthProvider>
     </ApolloProvider>
   </React.StrictMode>
 );

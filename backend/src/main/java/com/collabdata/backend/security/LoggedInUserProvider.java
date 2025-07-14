@@ -5,6 +5,7 @@ import com.collabdata.backend.model.User;
 import com.collabdata.backend.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
@@ -21,15 +22,27 @@ public class LoggedInUserProvider {
     }
 
     public User getCurrentUser() {
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
+        if (auth == null || !auth.isAuthenticated() || auth.getPrincipal() == null) {
+            throw new RuntimeException("Unauthenticated");
+        }
+
+        Object principal = auth.getPrincipal();
+
+        // ✅ Use CustomUserDetails if available
+        if (principal instanceof CustomUserDetails customUserDetails) {
+            return customUserDetails.getUser();
+        }
+
+        // ✅ Fallback for older mockLogin-based sessions (Optional)
         if (principal instanceof String username) {
-            logger.info("🔐 Fetching logged-in user: {}", username);
+            logger.warn("Fallback: principal is string: {}", username);
             return userRepository.findByUsername(username)
                     .orElseThrow(() -> new UserNotFoundException("username: " + username));
         }
 
-        throw new RuntimeException("Invalid authentication principal");
+        throw new RuntimeException("Invalid authentication principal type: " + principal.getClass());
     }
 
     // DEV ONLY: Simulate login for now
