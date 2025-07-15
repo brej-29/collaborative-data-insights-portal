@@ -119,6 +119,16 @@ export default function SignupPage() {
         >
           ✅ Register
         </button>
+
+        <p className="mt-4 text-sm text-center">
+          Already have an account?{" "}
+          <button
+            onClick={() => navigate("/login")}
+            className="text-blue-600 hover:underline"
+          >
+            Log in
+          </button>
+        </p>
       </div>
     </div>
   );
