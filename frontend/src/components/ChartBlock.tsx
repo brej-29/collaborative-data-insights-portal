@@ -1,12 +1,9 @@
 import React from "react";
-import {
-  Bar,
-  Line,
-  Pie,
-  Doughnut,
-  Radar,
-  Scatter,
-} from "react-chartjs-2";
+import { useEffect, useState } from "react";
+import { useWebSocketContext } from "../context/WebSocketContext";
+import { ChartUpdateMessage } from "../types"; // Adjust path if needed
+
+import { Bar, Line, Pie, Doughnut, Radar, Scatter } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   registerables,
@@ -38,6 +35,7 @@ ChartJS.register(
 
 interface ChartBlockProps {
   config: {
+    chartId: string;
     chartType:
       | "bar"
       | "line"
@@ -59,7 +57,31 @@ interface ChartBlockProps {
 }
 
 export default function ChartBlock({ config }: ChartBlockProps) {
-  const { chartType, xField, yField, title, data, dataInfo } = config;
+  const [localConfig, setLocalConfig] = useState(config);
+  const { registerChartHandler, unregisterChartHandler } =
+    useWebSocketContext();
+
+  const { chartId, chartType, xField, yField, title, data, dataInfo } = localConfig;
+
+  useEffect(() => {
+    const handler = (msg: ChartUpdateMessage) => {
+      if (msg.chartId === chartId) {
+        setLocalConfig((prev) => ({
+          ...prev,
+          xField: msg.config.xField ?? prev.xField,
+          yField: msg.config.yField ?? prev.yField,
+          title: msg.config.title ?? prev.title,
+        }));
+      }
+    };
+
+    registerChartHandler(chartId, handler);
+    return () => unregisterChartHandler(chartId);
+  }, [chartId, registerChartHandler, unregisterChartHandler]);
+
+  if (!chartId) {
+  return <div className="text-red-600">❌ Missing chartId in config</div>;
+}
 
   if (!data || !Array.isArray(data)) {
     return <div className="text-red-600">⚠️ Invalid or missing data</div>;
@@ -117,7 +139,9 @@ export default function ChartBlock({ config }: ChartBlockProps) {
       counts[key] = (counts[key] || 0) + 1;
     });
 
-    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+    const sorted = Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10);
 
     labels = sorted.map(([k]) => k);
     values = sorted.map(([, v]) => v);
@@ -139,7 +163,9 @@ export default function ChartBlock({ config }: ChartBlockProps) {
       counts[key] = (counts[key] || 0) + 1;
     });
 
-    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+    const sorted = Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10);
     labels = sorted.map(([k]) => k);
     values = sorted.map(([, v]) => v);
 
@@ -147,9 +173,16 @@ export default function ChartBlock({ config }: ChartBlockProps) {
       label: `Count of ${xField}`,
       data: values,
       backgroundColor: [
-        "#3B82F6", "#10B981", "#F59E0B", "#EF4444",
-        "#6366F1", "#8B5CF6", "#EC4899", "#F97316",
-        "#14B8A6", "#0EA5E9"
+        "#3B82F6",
+        "#10B981",
+        "#F59E0B",
+        "#EF4444",
+        "#6366F1",
+        "#8B5CF6",
+        "#EC4899",
+        "#F97316",
+        "#14B8A6",
+        "#0EA5E9",
       ],
     };
   }
@@ -170,7 +203,11 @@ export default function ChartBlock({ config }: ChartBlockProps) {
 
   // ❌ If unsupported, show warning
   else {
-    return <div className="text-yellow-600">⚠️ Invalid or unsupported chart config</div>;
+    return (
+      <div className="text-yellow-600">
+        ⚠️ Invalid or unsupported chart config
+      </div>
+    );
   }
 
   const chartData = {
@@ -219,20 +256,19 @@ export default function ChartBlock({ config }: ChartBlockProps) {
     scatter: Scatter,
     histogram: Bar,
     area: Line,
-    heatmap: null,  // Not supported yet
-
+    heatmap: null, // Not supported yet
   };
 
   const ChartComponent = chartMap[chartType];
   if (!ChartComponent) return <div>❌ Unsupported chart type: {chartType}</div>;
 
   console.log(`Rendering chart: ${chartType}`, {
-  xField,
-  yField,
-  labels,
-  values,
-  data: chartData.datasets[0].data,
-});
+    xField,
+    yField,
+    labels,
+    values,
+    data: chartData.datasets[0].data,
+  });
 
   return (
     <div className="h-[400px]">

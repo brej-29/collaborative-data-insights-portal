@@ -9,6 +9,7 @@ import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import { useAuth as useAuthContext } from "./context/AuthContext"; // ✅ rename to avoid conflict
 import useAuth from "./hooks/useAuth"; // ✅ your custom hook
+import { WebSocketProvider } from "./context/WebSocketContext"; // ✅ Add this import
 
 function PrivateRoute({ children }: { children: React.JSX.Element }) {
   const { token } = useAuthContext();
@@ -21,6 +22,7 @@ function App() {
 
   return (
     <div className="relative">
+       <WebSocketProvider>
       <Router>
         <Header />
 
@@ -59,6 +61,7 @@ function App() {
           />
         </Routes>
       </Router>
+      </WebSocketProvider>
     </div>
   );
 }

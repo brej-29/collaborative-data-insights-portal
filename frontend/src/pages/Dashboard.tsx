@@ -4,8 +4,10 @@ import { getChartSuggestions } from "../ai/openRouter";
 import { buildPrompt } from "../ai/promptBuilder";
 import EditableChartBlock from "../components/EditableChartBlock";
 import DataSummary from "../components/DataSummary";
-
+import useWebSocket from "../hooks/useWebSocket";
+import { v4 as uuidv4 } from "uuid";
 interface ChartConfig {
+  chartId: string;
   chartType:
     | "bar"
     | "line"
@@ -45,7 +47,12 @@ export default function Dashboard() {
   const [manualTitle, setManualTitle] = useState<string>("");
   const [dataSummary, setDataSummary] = useState<Record<string, any> | null>(null);
   const [showPreview, setShowPreview] = useState(false);
-
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { sendMessage } = useWebSocket((msg) => {
+    const update = JSON.parse(msg.body);
+    console.log("📡 Real-time update received:", update);
+    // TODO: Apply update to state (e.g., update chart, show toast, etc.)
+  });
 
 
   useEffect(() => {
@@ -222,6 +229,7 @@ const handleDatasetSelect = async (id: string) => {
         className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
         onClick={() => {
           const newChart = {
+            chartId: uuidv4(),
             chartType: manualChartType,
             xField: manualXField,
             yField: manualChartType === "pie" ? null : manualYField,

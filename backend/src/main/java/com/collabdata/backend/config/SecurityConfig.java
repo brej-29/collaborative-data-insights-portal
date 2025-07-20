@@ -37,7 +37,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // ✅ CORS preflight
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/graphql", "/graphiql", "/vendor/**").permitAll() // ✅ GraphQL UI
+                        .requestMatchers("/graphql", "/graphiql", "/vendor/**").permitAll()
+                        .requestMatchers("/ws/**").permitAll() // ✅ GraphQL UI
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 

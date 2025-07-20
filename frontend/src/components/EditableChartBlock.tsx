@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import ChartBlock from "./ChartBlock";
+import { useWebSocketContext } from "../context/WebSocketContext"; // or wherever it's defined
 
 interface EditableChartBlockProps {
   config: any;
@@ -13,7 +14,7 @@ export default function EditableChartBlock({ config, onUpdate, onDelete }: Edita
   const [xField, setXField] = useState(config.xField);
   const [yField, setYField] = useState(config.yField || "");
   const [error, setError] = useState("");
-
+  const { sendMessage } = useWebSocketContext();
   const fields = config.data && config.data.length > 0 ? Object.keys(config.data[0]) : [];
 
   const handleSave = () => {
@@ -24,6 +25,17 @@ export default function EditableChartBlock({ config, onUpdate, onDelete }: Edita
     setError("");
     onUpdate({ ...config, title, xField, yField });
     setEditing(false);
+    sendMessage({
+    type: "chart_update",
+    chartId: config.chartId,
+    datasetId: config.datasetId, // Make sure config contains datasetId
+    config: {
+      title,
+      xField,
+      yField,
+    },
+  });
+    
   };
 
   const confirmDelete = () => {
