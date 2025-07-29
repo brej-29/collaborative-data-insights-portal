@@ -81,9 +81,48 @@ const handleDatasetSelect = async (id: string) => {
     const summaryRes = await api.get(`/analysis/${id}/summary`);
     setDataSummary(summaryRes.data);
 
+    // ✅ 3. Fetch saved charts
+    const chartRes = await api.get(`/charts?datasetId=${id}`);
+    const loadedCharts = chartRes.data.map((c: any) => ({
+      chartId: c.id,
+      chartType: c.chartType,
+      title: c.title,
+      xField: c.xField,
+      yField: c.yField,
+      data: parsedRows, // Attach fresh data
+      dataInfo: {
+        used: parsedRows.length,
+        total: parsedRows.length,
+      },
+    }));
+
+    // 4. Update chart state
+    setCharts(loadedCharts);
+
   } catch (err) {
     console.error("⚠️ Failed to load dataset or summary", err);
   alert("Failed to load dataset or summary. Please try again later.");
+  }
+};
+
+const handleSaveCharts = async () => {
+  if (!selectedDatasetId || !charts.length) return;
+
+  try {
+    await api.post("/charts/save", {
+      datasetId: selectedDatasetId,
+      charts: charts.map(({ chartType, xField, yField, title }) => ({
+        chartType,
+        xField,
+        yField,
+        title,
+      })),
+    });
+
+    alert("✅ Charts saved to backend!");
+  } catch (err) {
+    console.error("Error saving charts", err);
+    alert("❌ Failed to save charts");
   }
 };
 
@@ -127,6 +166,7 @@ const handleDatasetSelect = async (id: string) => {
 
     const enrichedCharts = aiCharts.map((chart: any) => ({
       ...chart,
+      chartId: uuidv4(),
       data: selectedDatasetData,
       dataInfo: {
         used: selectedDatasetData.length,
@@ -282,14 +322,38 @@ const handleDatasetSelect = async (id: string) => {
       updated[index] = newConfig;
       setCharts(updated);
     }}
-    onDelete={() => {
-      const updated = [...charts];
-      updated.splice(index, 1);
-      setCharts(updated);
-    }}
+    onDelete={async () => {
+  const chartToDelete = charts[index];
+
+  // Check if it has a chartId → only saved charts have it
+  if (chartToDelete.chartId) {
+    try {
+      await api.delete(`/charts/${chartToDelete.chartId}`);
+    } catch (err) {
+      console.error("❌ Failed to delete chart from backend:", err);
+      alert("Failed to delete chart from server.");
+    }
+  }
+
+  // Always remove from local state
+  const updated = [...charts];
+  updated.splice(index, 1);
+  setCharts(updated);
+}}
   />
 ))}
 </div>
+{/* 💾 Save Button */}
+{charts.length > 0 && (
+  <div className="mt-6 text-right">
+    <button
+      onClick={handleSaveCharts}
+      className="bg-green-700 text-white px-4 py-2 rounded hover:bg-green-800"
+    >
+      💾 Save Charts to Backend
+    </button>
+  </div>
+)}
 
     </div>
   );

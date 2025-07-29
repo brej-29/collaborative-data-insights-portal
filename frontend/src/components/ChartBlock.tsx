@@ -81,6 +81,7 @@ export default function ChartBlock({ config }: ChartBlockProps) {
 
   if (!chartId) {
   return <div className="text-red-600">❌ Missing chartId in config</div>;
+  
 }
 
   if (!data || !Array.isArray(data)) {
